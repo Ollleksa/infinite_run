@@ -16,6 +16,9 @@ extern SDL_Event event;
 extern TTF_Font *font;
 extern SDL_Color textColor;
 
+//losing status
+extern bool loser;
+
 Drone::Drone()
 {
     box.x = SCREEN_WIDTH/2 + DRONE_SIZE;
@@ -62,7 +65,7 @@ void Drone::handle_keys()
 void Drone::move(int dt, Block *firstblocks[], Block *nextblocks[])
 {
     Vx += 10 * ax * (dt/1000.f);
-    Vy += 10 * ay * (dt/1000.f);
+    Vy += (10 * ay-GRAVITY) * (dt/1000.f);
 
     float dx, dy;
     dx = Vx* (dt/1000.f);
@@ -80,10 +83,11 @@ void Drone::move(int dt, Block *firstblocks[], Block *nextblocks[])
         Vx = 0;
     }
 
-    if( (box.y < 0) || ( box.y > LEVEL_HEIGHT ) )
+    if( (box.y < 0) || ( box.y > LEVEL_HEIGHT - DRONE_SIZE ) )
     {
         y -= dy;
         Vy = 0;
+        loser = true;
     }
 
     for(int i = 0; i < NUM_BLOCKS; i++)

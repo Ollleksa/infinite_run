@@ -15,6 +15,7 @@ SDL_Surface* background = NULL;
 SDL_Surface* drone = NULL;
 SDL_Surface* info = NULL;
 SDL_Surface* eva = NULL;
+SDL_Surface* lose = NULL;
 
 //Camera and block
 SDL_Rect camera = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
@@ -27,6 +28,9 @@ TTF_Font *font = NULL;
 SDL_Color textColor = { 0, 0, 0};
 
 int current_screen = 0;
+
+//losing status
+bool loser = false;
 
 //Load images from file. Improve them in some way (I do not know), and delete colorkey
 SDL_Surface *load_image (string filename)
@@ -106,6 +110,8 @@ bool load_files()
     drone = load_image("drone.png");
     //block
     eva = load_image("block.png");
+    //lose screen
+    lose = load_image("loser.png");
     //Font
     font = TTF_OpenFont("font.ttf", 36);
 
@@ -300,6 +306,12 @@ int main(int argc, char* args[])
         show_block(firstblocks,nextblocks);
 
         myDrone.show();
+
+        if(loser == true)
+        {
+             SDL_SetAlpha( lose, SDL_SRCALPHA, 60 );
+             apply_surface(0,0,lose,screen);
+        }
 
         //Update screen
         if(SDL_Flip( screen ) == -1)

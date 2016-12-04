@@ -24,6 +24,9 @@ const int NUM_BLOCKS = 5;
 //The artibutes of drone
 const int DRONE_SIZE = 128;
 
+//Gravity in game (Y axe go up)
+const int GRAVITY = -2;
+
 bool check_collision(SDL_Rect &A, SDL_Rect &B);
 
 void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination, SDL_Rect* clip = NULL);
