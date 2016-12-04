@@ -26,6 +26,8 @@ SDL_Event event;
 TTF_Font *font = NULL;
 SDL_Color textColor = { 0, 0, 0};
 
+int current_screen = 0;
+
 //Load images from file. Improve them in some way (I do not know), and delete colorkey
 SDL_Surface *load_image (string filename)
 {
@@ -118,7 +120,7 @@ bool load_files()
     return true;
 }
 
-void close(Block *blocks[])
+void close(Block *firstblocks[], Block *nextblocks[])
 {
     //Free the surfaces
     SDL_FreeSurface(background);
@@ -130,9 +132,10 @@ void close(Block *blocks[])
     TTF_CloseFont( font );
 
     //Free the tiles
-    for( int t = 0; t < 10; t++ )
+    for( int t = 0; t < NUM_BLOCKS; t++ )
     {
-        delete blocks[t];
+        delete firstblocks[t];
+        delete nextblocks[t];
     }
 
     //Quit TTF and SDL
@@ -179,18 +182,51 @@ void show_scrolling()
     //apply_surface(-pos-background->w,0,background,screen);
 }
 
-bool block_creation( Block *blocks[] )
+bool block_creation( Block *blocks[], int level )
 {
-    srand(time(NULL));
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < NUM_BLOCKS; i++)
     {
         int x, y;
-        x = rand()%LEVEL_WIDTH;
+        x = rand()%LEVEL_WIDTH + level*LEVEL_WIDTH;
         y = rand()%LEVEL_HEIGHT;
         blocks[i] = new Block(x, y);
     }
 
     return true;
+}
+
+void block_destruction(Block *blocks[])
+{
+    for( int t = 0; t < NUM_BLOCKS; t++ )
+    {
+        delete blocks[t];
+    }
+}
+
+void show_block( Block *firstblocks[], Block *nextblocks[] )
+{
+    int screen_number = camera.x/LEVEL_WIDTH;
+
+    if(current_screen != screen_number)
+    {
+        for(int i = 0; i < NUM_BLOCKS; i++)
+        {
+
+            firstblocks[i] = nextblocks[i];
+        }
+        if( block_creation( nextblocks, screen_number+1 ) == false )
+        {
+            cout << "Bloks!!!" << endl;
+        }
+    }
+
+    for(int i = 0; i < NUM_BLOCKS; i++)
+    {
+        firstblocks[i]->show_block();
+        nextblocks[i]->show_block();
+    }
+
+    current_screen = screen_number;
 }
 
 int main(int argc, char* args[])
@@ -200,7 +236,8 @@ int main(int argc, char* args[])
 
 	Drone myDrone;
 
-	Block *blocks[10];
+	Block *firstblocks[NUM_BLOCKS];
+	Block *nextblocks[NUM_BLOCKS];
 
 	Timer delta;
 
@@ -213,12 +250,16 @@ int main(int argc, char* args[])
     {
         return 1;
     }
-    if( block_creation( blocks ) == false )
-	{
+    if( block_creation( firstblocks, 0 ) == false )
+    {
         cout << "Bloks!!!" << endl;
-        return 1;
+    }
+    if( block_creation( nextblocks, 1 ) == false )
+    {
+        cout << "Bloks!!!" << endl;
     }
 
+    srand(time(NULL));
     //start timer first time
     delta.start();
 
@@ -247,7 +288,7 @@ int main(int argc, char* args[])
         myDrone.set_camera();
 
         //Moving
-        myDrone.move(delta.get_Ticks(),blocks);
+        myDrone.move(delta.get_Ticks(),firstblocks,nextblocks);
 
         //Restart timer for next iteration
         delta.start();
@@ -256,10 +297,7 @@ int main(int argc, char* args[])
         show_scrolling();
 
         //Show block
-        for(int i = 0; i < 10; i++)
-        {
-            blocks[i]->show_block();
-        }
+        show_block(firstblocks,nextblocks);
 
         myDrone.show();
 
@@ -269,8 +307,9 @@ int main(int argc, char* args[])
             return 1;
         }
     }
+
 	//quit SDL
-	close(blocks);
+	close(firstblocks, nextblocks);
 
 	return 0;
 }

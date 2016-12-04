@@ -18,6 +18,9 @@ const int LEVEL_HEIGHT = 768;
 //The atributes of block
 const int BLOCK_SIZE = 160;
 
+//Number of blocks
+const int NUM_BLOCKS = 5;
+
 //The artibutes of drone
 const int DRONE_SIZE = 128;
 

@@ -20,7 +20,7 @@ class Drone
         //read keyboard
         void handle_keys();
         //Move system
-        void move(int dt, Block *blocks[]);
+        void move(int dt, Block *firstblocks[], Block *nextblocks[]);
 	//Check impulses
 	void impulse(SDL_Rect obstacle, float dx, float dy);
         //show system

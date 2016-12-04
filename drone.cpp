@@ -59,7 +59,7 @@ void Drone::handle_keys()
     }
 }
 
-void Drone::move(int dt, Block *blocks[])
+void Drone::move(int dt, Block *firstblocks[], Block *nextblocks[])
 {
     Vx += 10 * ax * (dt/1000.f);
     Vy += 10 * ay * (dt/1000.f);
@@ -86,12 +86,18 @@ void Drone::move(int dt, Block *blocks[])
         Vy = 0;
     }
 
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < NUM_BLOCKS; i++)
     {
-	SDL_Rect one = blocks[i]->get_box();
+	SDL_Rect one = firstblocks[i]->get_box();
     	if( check_collision(box, one) )
     	{
 		impulse(one, dx, dy);
+        }
+
+	SDL_Rect two = nextblocks[i]->get_box();
+    	if( check_collision(box, two) )
+    	{
+		impulse(two, dx, dy);
         }
     }
 
