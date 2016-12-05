@@ -21,8 +21,8 @@ extern bool loser;
 
 Drone::Drone()
 {
-    box.x = SCREEN_WIDTH/2 + DRONE_SIZE;
-    box.y = SCREEN_HEIGHT/2;
+    box.x = 0;
+    box.y = (SCREEN_HEIGHT-DRONE_SIZE)/2;
     box.w = DRONE_SIZE;
     box.h = DRONE_SIZE;
 
@@ -30,7 +30,7 @@ Drone::Drone()
     y = box.y;
     Vx = 0;
     Vy = 0;
-    ax = 0;
+    //ax = 0;
     ay = 0;
 }
 
@@ -43,8 +43,8 @@ void Drone::handle_keys()
         {
             case SDLK_UP: ay--; break;
             case SDLK_DOWN: ay++; break;
-            case SDLK_LEFT: ax--; break;
-            case SDLK_RIGHT: ax++; break;
+            //case SDLK_LEFT: ax--; break;
+            //case SDLK_RIGHT: ax++; break;
             default: ;
         }
     }
@@ -55,8 +55,8 @@ void Drone::handle_keys()
         {
             case SDLK_UP: ay++; break;
             case SDLK_DOWN: ay--; break;
-            case SDLK_LEFT: ax++; break;
-            case SDLK_RIGHT: ax--; break;
+            //case SDLK_LEFT: ax++; break;
+            //case SDLK_RIGHT: ax--; break;
             default: ;
         }
     }
@@ -64,8 +64,9 @@ void Drone::handle_keys()
 
 void Drone::move(int dt, Block *firstblocks[], Block *nextblocks[])
 {
-    Vx += 10 * ax * (dt/1000.f);
-    Vy += (10 * ay-GRAVITY) * (dt/1000.f);
+    //Vx += 10 * ax * (dt/1000.f);
+    Vx = 20 * (1 + 0.05*x/LEVEL_WIDTH);
+    Vy += (30 * ay-GRAVITY) * (dt/1000.f);
 
     float dx, dy;
     dx = Vx* (dt/1000.f);
@@ -92,16 +93,22 @@ void Drone::move(int dt, Block *firstblocks[], Block *nextblocks[])
 
     for(int i = 0; i < NUM_BLOCKS; i++)
     {
-	SDL_Rect one = firstblocks[i]->get_box();
-    	if( check_collision(box, one) )
-    	{
-		impulse(one, dx, dy);
+        SDL_Rect one = firstblocks[i]->get_box();
+        if( check_collision(box, one) )
+        {
+            Vx = 0;
+            Vy = 0;
+            loser = true;
+	//	impulse(one, dx, dy);
         }
 
-	SDL_Rect two = nextblocks[i]->get_box();
-    	if( check_collision(box, two) )
-    	{
-		impulse(two, dx, dy);
+        SDL_Rect two = nextblocks[i]->get_box();
+        if( check_collision(box, two) )
+        {
+            Vx = 0;
+            Vy = 0;
+            loser = true;
+	//	impulse(two, dx, dy);
         }
     }
 

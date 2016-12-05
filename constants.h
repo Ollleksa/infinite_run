@@ -25,7 +25,7 @@ const int NUM_BLOCKS = 5;
 const int DRONE_SIZE = 128;
 
 //Gravity in game (Y axe go up)
-const int GRAVITY = -2;
+const int GRAVITY = -5;
 
 bool check_collision(SDL_Rect &A, SDL_Rect &B);
 

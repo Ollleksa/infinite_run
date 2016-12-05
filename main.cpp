@@ -28,6 +28,7 @@ TTF_Font *font = NULL;
 SDL_Color textColor = { 0, 0, 0};
 
 int current_screen = 0;
+int space_for_block = LEVEL_WIDTH / NUM_BLOCKS;
 
 //losing status
 bool loser = false;
@@ -111,7 +112,7 @@ bool load_files()
     //block
     eva = load_image("block.png");
     //lose screen
-    lose = load_image("loser.png");
+    lose = load_image("d7b.png");
     //Font
     font = TTF_OpenFont("font.ttf", 36);
 
@@ -193,12 +194,24 @@ bool block_creation( Block *blocks[], int level )
     for(int i = 0; i < NUM_BLOCKS; i++)
     {
         int x, y;
-        x = rand()%LEVEL_WIDTH + level*LEVEL_WIDTH;
-        y = rand()%LEVEL_HEIGHT;
+        x = rand()%(space_for_block-BLOCK_SIZE) + level*LEVEL_WIDTH + i*space_for_block;
+        y = rand()%(LEVEL_HEIGHT-BLOCK_SIZE);
         blocks[i] = new Block(x, y);
     }
 
     return true;
+}
+
+void block_creation_first( Block *blocks[] )
+{
+    blocks[0] = new Block(-BLOCK_SIZE, -BLOCK_SIZE);
+    for(int i = 1; i < NUM_BLOCKS; i++)
+    {
+        int x, y;
+        x = rand()%(space_for_block-BLOCK_SIZE) + i*space_for_block;
+        y = rand()%(LEVEL_HEIGHT-BLOCK_SIZE);
+        blocks[i] = new Block(x, y);
+    }
 }
 
 void block_destruction(Block *blocks[])
@@ -217,7 +230,6 @@ void show_block( Block *firstblocks[], Block *nextblocks[] )
     {
         for(int i = 0; i < NUM_BLOCKS; i++)
         {
-
             firstblocks[i] = nextblocks[i];
         }
         if( block_creation( nextblocks, screen_number+1 ) == false )
@@ -256,10 +268,7 @@ int main(int argc, char* args[])
     {
         return 1;
     }
-    if( block_creation( firstblocks, 0 ) == false )
-    {
-        cout << "Bloks!!!" << endl;
-    }
+    block_creation_first(firstblocks);
     if( block_creation( nextblocks, 1 ) == false )
     {
         cout << "Bloks!!!" << endl;
