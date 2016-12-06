@@ -204,3 +204,8 @@ void Drone::set_camera()
         camera.y = LEVEL_HEIGHT - camera.h;
     }
 }
+
+int Drone::get_score()
+{
+	return box.x;
+}

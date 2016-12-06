@@ -18,6 +18,12 @@ const int LEVEL_HEIGHT = 768;
 //The atributes of block
 const int BLOCK_SIZE = 160;
 
+//The button states in the sprite sheet
+const int MENU_BEGIN = 0;
+const int MENU_EXIT = 1;
+const int LOSE_BEGIN = 2;
+const int LOSE_EXIT = 3;
+
 //Number of blocks
 const int NUM_BLOCKS = 5;
 

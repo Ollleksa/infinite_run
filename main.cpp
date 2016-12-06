@@ -9,13 +9,15 @@
 #include "timer.h"
 #include "block.h"
 #include "constants.h"
+#include "button.h"
 
 SDL_Surface* screen = NULL;
 SDL_Surface* background = NULL;
 SDL_Surface* drone = NULL;
 SDL_Surface* info = NULL;
 SDL_Surface* eva = NULL;
-SDL_Surface* lose = NULL;
+SDL_Surface* menu = NULL;
+SDL_Surface* butt = NULL;
 
 //Camera and block
 SDL_Rect camera = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
@@ -32,6 +34,9 @@ int space_for_block = LEVEL_WIDTH / NUM_BLOCKS;
 
 //losing status
 bool loser = false;
+//main loop flag
+bool quit = false;
+bool stage_q = false;
 
 //Load images from file. Improve them in some way (I do not know), and delete colorkey
 SDL_Surface *load_image (string filename)
@@ -49,12 +54,12 @@ SDL_Surface *load_image (string filename)
         SDL_FreeSurface( loadedImage );
     }
 
-    //if( optimizedImage != NULL )
-    //{
+    if( optimizedImage != NULL )
+    {
     //Map the color key //set all picsels of color R 0, G 0xFF, B 0xFF to be transparent
-    //    Uint32 colorkey = SDL_MapRGB( optimizedImage->format, 0, 0xFF, 0xFF);
-    //    SDL_SetColorKey(optimizedImage, SDL_SRCCOLORKEY, colorkey);
-    //}
+        Uint32 colorkey = SDL_MapRGB( optimizedImage->format, 0, 0xFF, 0xFF);
+        SDL_SetColorKey(optimizedImage, SDL_SRCCOLORKEY, colorkey);
+    }
 
     return optimizedImage;
 }
@@ -105,19 +110,21 @@ bool init()
 
 bool load_files()
 {
+    //menu
+    menu = load_image("menu.png");
     //Background
     background = load_image("backgroung.png");
     //drone =/
     drone = load_image("drone.png");
     //block
     eva = load_image("block.png");
-    //lose screen
-    lose = load_image("d7b.png");
+
+    butt = load_image( "buttons2.png" );
     //Font
     font = TTF_OpenFont("font.ttf", 36);
 
     //if problems, go down
-    if( background == NULL )
+    if( menu == NULL )
         {cout << "background" << endl; return false;}
 
     if( font == NULL )
@@ -127,17 +134,27 @@ bool load_files()
     return true;
 }
 
-void close(Block *firstblocks[], Block *nextblocks[])
+void free_surf()
 {
     //Free the surfaces
     SDL_FreeSurface(background);
     SDL_FreeSurface( drone );
     SDL_FreeSurface( info );
     SDL_FreeSurface( eva );
+    SDL_FreeSurface( menu );
+    SDL_FreeSurface( butt );
 
     //Close font
     TTF_CloseFont( font );
 
+    //Quit TTF and SDL
+    TTF_Quit();
+    SDL_Quit();
+
+}
+
+void close(Block *firstblocks[], Block *nextblocks[])
+{
     //Free the tiles
     for( int t = 0; t < NUM_BLOCKS; t++ )
     {
@@ -145,9 +162,7 @@ void close(Block *firstblocks[], Block *nextblocks[])
         delete nextblocks[t];
     }
 
-    //Quit TTF and SDL
-    TTF_Quit();
-    SDL_Quit();
+    free_surf();
 }
 
 bool check_collision(SDL_Rect &A, SDL_Rect &B)
@@ -247,17 +262,28 @@ void show_block( Block *firstblocks[], Block *nextblocks[] )
     current_screen = screen_number;
 }
 
+void show_result( int score)
+{
+    stringstream text;
+    text << "You get " << score << " points";
+    //create text
+    info = TTF_RenderText_Solid( font, text.str().c_str(), textColor );
+    apply_surface((SCREEN_WIDTH - info->w)/2, (SCREEN_HEIGHT-info->h)/2, info, screen );
+}
+
 int main(int argc, char* args[])
 {
-	//main loop flag
-	bool quit = false;
-
-	Drone myDrone;
+	set_clips();
 
 	Block *firstblocks[NUM_BLOCKS];
 	Block *nextblocks[NUM_BLOCKS];
 
 	Timer delta;
+
+	Button MStart(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 500, 125, 0);
+    Button MExit(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+130, 500, 125, 1);
+    Button LStart(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 500, 125, 2);
+    Button LExit(SCREEN_WIDTH/2, SCREEN_HEIGHT/2+130, 500, 125, 3);
 
     //Initialize
     if( init() == false )
@@ -268,66 +294,140 @@ int main(int argc, char* args[])
     {
         return 1;
     }
-    block_creation_first(firstblocks);
-    if( block_creation( nextblocks, 1 ) == false )
-    {
-        cout << "Bloks!!!" << endl;
-    }
 
-    srand(time(NULL));
-    //start timer first time
-    delta.start();
-
-    //while isnt closed
-    while( !quit )
+    while(!stage_q)
     {
-        //If something happens
+        apply_surface(0, 0, menu, screen);
+        MStart.show_butt();
+        MExit.show_butt();
+
         while( SDL_PollEvent( &event ))
         {
-            //Read the keyboard
-            myDrone.handle_keys();
-
+            MStart.handle_events();
+            MExit.handle_events();
+            //if space was pressed
+            if(( event.type == SDL_KEYDOWN ) && ( event.key.keysym.sym == SDLK_SPACE ))
+            {
+                stage_q = true;
+            }
             //If escape was pressed
             if( ( event.type == SDL_KEYDOWN ) && ( event.key.keysym.sym == SDLK_ESCAPE ) )
             {
+                stage_q = true;
                 quit = true;
             }
             //User request quit
             if( event.type == SDL_QUIT )
             {
+                stage_q = true;
                 quit = true;
             }
         }
 
-        //set camera
-        myDrone.set_camera();
+        SDL_Flip( screen );
+    }
 
-        //Moving
-        myDrone.move(delta.get_Ticks(),firstblocks,nextblocks);
+    if(quit == true)
+    {
+        free_surf();
+        return 1;
+    }
 
-        //Restart timer for next iteration
+    //while isnt closed
+    do
+    {
+        loser = false;
+        srand(time(NULL));
+        block_creation_first(firstblocks);
+        if( block_creation( nextblocks, 1 ) == false )
+        {
+            cout << "Bloks!!!" << endl;
+        }
+        Drone myDrone;
+        int score = 0;
+        stage_q = false;
+        //start timer first time
         delta.start();
 
-        //apply background part with camera
-        show_scrolling();
-
-        //Show block
-        show_block(firstblocks,nextblocks);
-
-        myDrone.show();
-
-        if(loser == true)
+        while( !stage_q )
         {
-             SDL_SetAlpha( lose, SDL_SRCALPHA, 60 );
-             apply_surface(0,0,lose,screen);
+            //If something happens
+            while( SDL_PollEvent( &event ))
+            {
+                //Read the keyboard
+                myDrone.handle_keys();
+
+                //If escape was pressed
+                if( ( event.type == SDL_KEYDOWN ) && ( event.key.keysym.sym == SDLK_ESCAPE ) )
+                {
+                    stage_q = true;
+                }
+                //User request quit
+                if( event.type == SDL_QUIT )
+                {
+                    stage_q = true;
+                    quit = true;
+                }
+            }
+
+            //set camera
+            myDrone.set_camera();
+
+            //Moving
+            myDrone.move(delta.get_Ticks(),firstblocks,nextblocks);
+
+            //Restart timer for next iteration
+            delta.start();
+
+            //apply background part with camera
+            show_scrolling();
+
+            //Show block
+            show_block(firstblocks,nextblocks);
+
+            myDrone.show();
+
+            if(loser == true)
+            {
+                stage_q = true;
+            }
+            //Update screen
+            if(SDL_Flip( screen ) == -1)
+            {
+                return 1;
+            }
         }
 
-        //Update screen
-        if(SDL_Flip( screen ) == -1)
+        //end screen shown
+        score = myDrone.get_score();
+        stage_q = false;
+        while ( !stage_q )
         {
-            return 1;
+            SDL_SetAlpha(menu, SDL_SRCALPHA, 128);
+            apply_surface(0,0,menu,screen);
+            show_result(score);
+            LStart.show_butt();
+            LExit.show_butt();
+            SDL_Flip(screen);
+
+            while( SDL_PollEvent( &event ))
+            {
+                LStart.handle_events();
+                LExit.handle_events();
+                //If escape was pressed
+                if( ( event.type == SDL_KEYDOWN ) && ( event.key.keysym.sym == SDLK_ESCAPE ) )
+                {
+                    quit = true;
+                }
+                //User request quit
+                if( event.type == SDL_QUIT )
+                {
+                    quit = true;
+                }
+            }
         }
     }
+    while(!quit);
 
 	//quit SDL
 	close(firstblocks, nextblocks);

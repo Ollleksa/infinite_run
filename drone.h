@@ -27,6 +27,8 @@ class Drone
         void show();
         //set camera in right position
         void set_camera();
+	//get score (x-coordinate)
+	int get_score();
 };
 
 #endif
