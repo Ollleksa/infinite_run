@@ -10,6 +10,7 @@
 #include "block.h"
 #include "constants.h"
 #include "button.h"
+#include "highscore.h"
 
 SDL_Surface* screen = NULL;
 SDL_Surface* background = NULL;
@@ -266,9 +267,10 @@ void show_result( int score)
 {
     stringstream text;
     text << "You get " << score << " points";
-    //create text
     info = TTF_RenderText_Solid( font, text.str().c_str(), textColor );
-    apply_surface((SCREEN_WIDTH - info->w)/2, (SCREEN_HEIGHT-info->h)/2, info, screen );
+    apply_surface((SCREEN_WIDTH - info->w)/2, (SCREEN_HEIGHT-info->h)/2 - 100, info, screen );
+    info = TTF_RenderText_Solid( font, "Type yor name: ", textColor );
+    apply_surface((SCREEN_WIDTH - info->w)/2, (SCREEN_HEIGHT-info->h)/2 - 50, info, screen );
 }
 
 int main(int argc, char* args[])
@@ -344,7 +346,10 @@ int main(int argc, char* args[])
             cout << "Bloks!!!" << endl;
         }
         Drone myDrone;
+        StringInput SImput;
+	SaveLoad SL;
         int score = 0;
+	bool beaten = false;
         stage_q = false;
         //start timer first time
         delta.start();
@@ -401,11 +406,55 @@ int main(int argc, char* args[])
         //end screen shown
         score = myDrone.get_score();
         stage_q = false;
-        while ( !stage_q )
+	if( SL.load_high() < score)
+	 {
+		beaten = true;
+	 }
+        while ( (!stage_q) && (!quit) )
+        {
+            while( SDL_PollEvent( &event ))
+            {
+                SImput.handle_input();
+                //If escape was pressed
+                if( ( event.type == SDL_KEYDOWN ) && ( event.key.keysym.sym == SDLK_ESCAPE ) )
+                {
+                    quit = true;
+                }
+                //User request quit
+                if( event.type == SDL_QUIT )
+                {
+                    quit = true;
+                }
+
+                if( ( event.type == SDL_KEYDOWN ) && ( event.key.keysym.sym == SDLK_RETURN ) )
+                {
+                    stage_q = true;
+                }
+            }
+
+       	 apply_surface(0,0,menu,screen);
+         show_result(score);
+         SImput.show_centered();
+	if(beaten)
+	{
+		SL.show_high_beaten();
+	}
+	else
+	{
+		SL.show_high_unbeaten();
+	}
+         SDL_Flip(screen);
+        }
+	
+	if( beaten )
+	 {
+		SL.save_high(score, SImput.get_name());
+	 }
+	
+        stage_q = false;
+        while ( !stage_q && !quit )
         {
             SDL_SetAlpha(menu, SDL_SRCALPHA, 128);
-            apply_surface(0,0,menu,screen);
-            show_result(score);
             LStart.show_butt();
             LExit.show_butt();
             SDL_Flip(screen);
